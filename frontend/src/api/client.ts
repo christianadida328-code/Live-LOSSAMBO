@@ -2,7 +2,11 @@
 const configuredApiBase = ((import.meta as any).env?.VITE_API_BASE || (import.meta as any).env?.VITE_API_URL || '').replace(/\/$/, '')
 const isLocalApiBase = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredApiBase)
 const isBrowserOnLocalhost = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
-const API_BASE = isLocalApiBase && !isBrowserOnLocalhost ? '' : configuredApiBase
+const browserUsesHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+const safeConfiguredApiBase = browserUsesHttps && configuredApiBase.startsWith('http://') && !isLocalApiBase
+  ? configuredApiBase.replace(/^http:\/\//i, 'https://')
+  : configuredApiBase
+const API_BASE = isLocalApiBase && !isBrowserOnLocalhost ? '' : safeConfiguredApiBase
 
 
 

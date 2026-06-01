@@ -1,5 +1,5 @@
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, send_from_directory, request
@@ -55,8 +55,20 @@ def create_app():
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173')
-    CORS(app, origins=cors_origins.split(','), supports_credentials=True)
+    cors_origins_env = os.getenv('CORS_ORIGINS')
+    if cors_origins_env:
+        cors_origins = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
+    else:
+        # Railway peut servir le frontend et le backend depuis des domaines differents.
+        # Les tokens passent par l'en-tete Authorization, pas par des cookies.
+        cors_origins = '*'
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": cors_origins}},
+        allow_headers=['Content-Type', 'Authorization'],
+        methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        supports_credentials=False,
+    )
 
     db.init_app(app)
 
@@ -75,9 +87,11 @@ def create_app():
     with app.app_context():
         # Important : create_all ne crée que les colonnes manquantes si le schéma SQLite ne change pas.
         # Pour de vrais changements de colonnes, il faut migrations.
-        from models import ChatMessage, ContactRequest, EventRequest, GalleryItem, Notification, ProductionRequest, ShopOrder, User, UserBlock  # noqa: F401
-        if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite:'):
+        from models import ChatMessage, ContactRequest, Event, EventRequest, GalleryItem, Notification, ProductionRequest, ProductionService, ShopItem, ShopOrder, User, UserBlock  # noqa: F401
+        auto_create_tables = (os.getenv('DISABLE_DB_CREATE_ALL') or '').strip().lower() not in ('1', 'true', 'yes')
+        if auto_create_tables:
             db.create_all()
+        if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite:'):
             try:
                 cols = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(member_profiles)")).fetchall()]
                 if 'profile_image_url' not in cols:
@@ -93,6 +107,64 @@ def create_app():
                 db.session.commit()
             except Exception as e:
                 print('[sqlite_migration] profile_image_url:', e)
+
+        seed_public_content = (os.getenv('SEED_PUBLIC_CONTENT') or 'true').strip().lower() in ('1', 'true', 'yes')
+        if seed_public_content:
+            try:
+                if Event.query.count() == 0:
+                    db.session.add(Event(
+                        title='Lossambo',
+                        description='Rencontre Live LOSSAMBO',
+                        start_at=datetime(2026, 7, 20, 17, 40),
+                        cover_url='/images/Preview.png',
+                        venue='Temple',
+                    ))
+                elif Event.query.filter(Event.start_at >= datetime.utcnow()).count() == 0:
+                    db.session.add(Event(
+                        title='Prochain Live LOSSAMBO',
+                        description='Prochaine rencontre Live LOSSAMBO',
+                        start_at=datetime(2026, 7, 20, 17, 40),
+                        cover_url='/images/Preview.png',
+                        venue='Temple',
+                    ))
+                if ProductionService.query.count() == 0:
+                    db.session.add_all([
+                        ProductionService(
+                            name='Production live',
+                            description='Captation et accompagnement audiovisuel pour cultes, concerts et evenements.',
+                            price_hint='Sur devis',
+                            media_url='/images/Preview.png',
+                        ),
+                        ProductionService(
+                            name='Enregistrement studio',
+                            description='Enregistrement, mixage et mastering pour chantres, chorales et ministeres.',
+                            price_hint='Sur devis',
+                            media_url='/logo.png',
+                        ),
+                    ])
+                if ShopItem.query.count() == 0:
+                    db.session.add_all([
+                        ShopItem(
+                            name='Ticket evenement Live LOSSAMBO',
+                            description='Reservation pour participer au prochain rassemblement.',
+                            price=0,
+                            image_url='/images/Preview.png',
+                            kind='ticket',
+                            available=True,
+                        ),
+                        ShopItem(
+                            name='Support ministere',
+                            description='Article de soutien pour les activites Live LOSSAMBO.',
+                            price=10,
+                            image_url='/logo.png',
+                            kind='merch',
+                            available=True,
+                        ),
+                    ])
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print('[seed_public_content] Erreur:', e)
 
 
 
@@ -191,7 +263,19 @@ def create_app():
             except Exception:
                 ok_val = 1
 
-            return jsonify({"ok": True, "dialect": dialect, "test": ok_val})
+            from models import Event, ProductionService, ShopItem, User
+            return jsonify({
+                "ok": True,
+                "dialect": dialect,
+                "test": ok_val,
+                "counts": {
+                    "events": Event.query.count(),
+                    "production_services": ProductionService.query.count(),
+                    "shop_items": ShopItem.query.count(),
+                    "users": User.query.count(),
+                },
+                "api_base_note": "frontend should call /api on this same host unless VITE_API_BASE points to another backend",
+            })
 
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
