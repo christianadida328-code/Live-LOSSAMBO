@@ -21,3 +21,8 @@ Le projet se deploie comme une application Python/Flask a la racine du depot.
 
 Le frontend React est servi par Flask depuis `frontend/dist` apres le build Railway.
 
+Si Railway affiche encore une liste de fichiers sans `start.sh`, `railway.json`,
+`requirements.txt` ou `pyproject.toml`, le deploiement utilise un ancien snapshot.
+Relancer le deploiement depuis la branche `main` et verifier que le root directory
+Railway est vide.
+
