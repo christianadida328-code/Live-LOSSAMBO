@@ -1,5 +1,8 @@
 // Laisse un fallback robuste pour éviter "Failed to fetch" si VITE_API_BASE n'est pas défini
-const API_BASE = (import.meta as any).env?.VITE_API_BASE || (import.meta as any).env?.VITE_API_URL || 'http://127.0.0.1:5000'
+const configuredApiBase = ((import.meta as any).env?.VITE_API_BASE || (import.meta as any).env?.VITE_API_URL || '').replace(/\/$/, '')
+const isLocalApiBase = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredApiBase)
+const isBrowserOnLocalhost = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+const API_BASE = isLocalApiBase && !isBrowserOnLocalhost ? '' : configuredApiBase
 
 
 
