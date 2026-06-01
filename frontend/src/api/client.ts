@@ -8,6 +8,13 @@ const safeConfiguredApiBase = browserUsesHttps && configuredApiBase.startsWith('
   : configuredApiBase
 const API_BASE = isLocalApiBase && !isBrowserOnLocalhost ? '' : safeConfiguredApiBase
 
+export function getApiBase() {
+  return API_BASE
+}
+
+function apiUrl(base: string, path: string) {
+  return `${base}${path}`
+}
 
 
 export async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
@@ -20,7 +27,21 @@ export async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token')
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers })
+  const primaryUrl = apiUrl(API_BASE, path)
+  let res: Response
+  try {
+    res = await fetch(primaryUrl, { ...opts, headers })
+  } catch (error) {
+    if (API_BASE) {
+      try {
+        res = await fetch(apiUrl('', path), { ...opts, headers })
+      } catch {
+        throw new Error(`Impossible de joindre l'API (${primaryUrl}). Verifie VITE_API_BASE ou utilise le meme service Railway pour frontend + backend.`)
+      }
+    } else {
+      throw new Error(`Impossible de joindre l'API (${primaryUrl}). Ouvre /api/health sur le meme domaine pour verifier le backend.`)
+    }
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new Error(text || `HTTP ${res.status}`)
