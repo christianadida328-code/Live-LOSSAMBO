@@ -1,0 +1,13 @@
+{
+  "name": "live-lossambo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "npm --prefix frontend ci && npm --prefix frontend run build",
+    "start": "bash start.sh"
+  },
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  }
+}
