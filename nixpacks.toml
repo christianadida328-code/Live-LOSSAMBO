@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["python311", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "pip install --no-cache-dir -r requirements.txt",
+  "npm --prefix frontend ci"
+]
+
+[phases.build]
+cmds = ["npm --prefix frontend run build"]
+
+[start]
+cmd = "gunicorn app:app --bind 0.0.0.0:${PORT:-5000} --workers ${WEB_CONCURRENCY:-2} --timeout ${GUNICORN_TIMEOUT:-120}"
