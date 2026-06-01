@@ -1,0 +1,19 @@
+[project]
+name = "live-lossambo"
+version = "0.1.0"
+description = "Live LOSSAMBO Flask API with a React frontend served from the Flask app."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "Flask==3.0.3",
+  "Flask-Cors==4.0.1",
+  "Flask-JWT-Extended==4.6.0",
+  "Flask-Migrate==4.0.7",
+  "Flask-SQLAlchemy==3.1.1",
+  "psycopg2-binary==2.9.12",
+  "python-dotenv==1.0.1",
+  "Werkzeug==3.0.3",
+  "gunicorn==23.0.0"
+]
+
+[tool.setuptools]
+py-modules = []
