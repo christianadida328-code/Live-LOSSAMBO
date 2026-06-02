@@ -1,7 +1,7 @@
-Flask
 gunicorn==21.2.0
-python-dotenv
+Flask
 flask-cors
 flask-jwt-extended
 flask-sqlalchemy
+python-dotenv
 psycopg2-binary
