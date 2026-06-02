@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section">
+  <div class="sectionHeader">
+    <div>
+      <p class="sectionTitle">Boutique</p>
+      <p class="sectionHint">Billets et produits derives</p>
+    </div>
+  </div>
+  <div class="grid">
+    {% for item in items %}
+      <div class="card" id="item-{{ item.id }}">
+        <div class="cardMedia">{% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}">{% endif %}</div>
+        <div class="cardBody">
+          <p class="cardTitle">{{ item.name }}</p>
+          <p class="cardText">{{ item.description }}</p>
+          <p class="sectionHint">Prix: {{ item.price }}</p>
+          <form class="form" method="post" style="margin-top:10px">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            <input class="input" name="name" placeholder="Votre nom" required>
+            <input class="input" name="whatsapp" placeholder="Numero WhatsApp" required>
+            <input class="input" name="quantity" type="number" min="1" value="1" placeholder="Quantite">
+            <textarea class="input" name="message" placeholder="Message (optionnel)" rows="3"></textarea>
+            <button class="btn btnPrimary" type="submit">Acheter</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="sectionHint">Aucun produit pour le moment.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

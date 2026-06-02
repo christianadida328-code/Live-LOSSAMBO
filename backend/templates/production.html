@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section">
+  <div class="sectionHeader">
+    <div>
+      <p class="sectionTitle">Production</p>
+      <p class="sectionHint">Services: videos, audio, affiches, flyers</p>
+    </div>
+  </div>
+  <div class="grid">
+    {% for service in services %}
+      <div class="card" id="service-{{ service.id }}">
+        <div class="cardMedia">{% if service.media_url %}<img src="{{ service.media_url }}" alt="{{ service.name }}">{% endif %}</div>
+        <div class="cardBody">
+          <p class="cardTitle">{{ service.name }}</p>
+          <p class="cardText">{{ service.description }}</p>
+          {% if service.price_hint %}<p class="sectionHint">{{ service.price_hint }}</p>{% endif %}
+          <form class="form" method="post" style="margin-top:10px">
+            <input type="hidden" name="service_id" value="{{ service.id }}">
+            <input class="input" name="name" placeholder="Votre nom" required>
+            <input class="input" name="whatsapp" placeholder="Numero WhatsApp" required>
+            <textarea class="input" name="message" placeholder="Decrivez votre besoin" rows="3"></textarea>
+            <button class="btn btnPrimary" type="submit">Faire une demande</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="sectionHint">Aucun service pour le moment.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

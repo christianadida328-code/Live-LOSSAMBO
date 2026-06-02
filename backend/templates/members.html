@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section">
+  <div class="sectionHeader">
+    <div>
+      <p class="sectionTitle">Membres</p>
+      <p class="sectionHint">Comptes inscrits</p>
+    </div>
+  </div>
+  <div class="grid">
+    {% for member in members %}
+      <div class="cardItem">
+        <div class="memberLine">
+          <img class="avatar" src="{{ member.profile.profile_image_url if member.profile else '/images/logo.png' }}" alt="{{ member.email }}">
+          <div>
+            <strong>{{ member.profile.display_name if member.profile else member.email }}</strong>
+            <div class="sectionHint">{{ member.profile.ministry_role if member.profile else member.role }}</div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

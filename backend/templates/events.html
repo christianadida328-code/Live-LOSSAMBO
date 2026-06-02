@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section">
+  <div class="sectionHeader">
+    <div>
+      <p class="sectionTitle">Calendrier des evenements</p>
+      <p class="sectionHint">Choisis un concert ou une session live</p>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    {% for event in events %}
+      <div class="card" id="event-{{ event.id }}">
+        <div class="cardMedia">{% if event.cover_url %}<img src="{{ event.cover_url }}" alt="{{ event.title }}">{% endif %}</div>
+        <div class="cardBody">
+          <p class="cardTitle">{{ event.title }}</p>
+          <p class="cardText">{{ event.description }}</p>
+          <p class="sectionHint">{{ event.start_at.strftime("%d/%m/%Y %H:%M") }} - {{ event.venue or "Lieu" }}</p>
+          <form class="form" method="post" style="margin-top:10px">
+            <input type="hidden" name="event_id" value="{{ event.id }}">
+            <input class="input" name="name" placeholder="Votre nom" required>
+            <input class="input" name="whatsapp" placeholder="Numero WhatsApp" required>
+            <textarea class="input" name="message" placeholder="Message (optionnel)" rows="3"></textarea>
+            <button class="btn btnPrimary" type="submit">S'inscrire</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="sectionHint">Aucun evenement pour le moment.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

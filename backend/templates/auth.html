@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section">
+  <div class="sectionHeader">
+    <div>
+      <p class="sectionTitle">Inscription / Connexion</p>
+      <p class="sectionHint">Compte membre Live LOSSAMBO</p>
+    </div>
+  </div>
+  <div class="row" style="align-items:flex-start">
+    <div class="heroCard" style="max-width:520px">
+      <p class="sectionTitle">Connexion</p>
+      <form class="form" method="post" style="margin-top:12px">
+        <input type="hidden" name="action" value="login">
+        <input class="input" name="email" type="email" placeholder="Gmail / email" required>
+        <input class="input" name="password" type="password" placeholder="Mot de passe" required>
+        <button class="btn btnPrimary" type="submit">Se connecter</button>
+      </form>
+    </div>
+    <div class="heroCard" style="max-width:520px">
+      <p class="sectionTitle">Creation de compte</p>
+      <form class="form" method="post" style="margin-top:12px">
+        <input type="hidden" name="action" value="register">
+        <input class="input" name="display_name" placeholder="Nom affiche">
+        <input class="input" name="email" type="email" placeholder="Gmail / email" required>
+        <input class="input" name="password" type="password" placeholder="Mot de passe (8 caracteres min)" required>
+        <input class="input" name="ministry_role" placeholder="Role / ministere" required>
+        <button class="btn btnPrimary" type="submit">Creer mon compte</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+  <div class="container">
+    <img class="homeBigLogo" src="/images/logo.png" alt="Logo Live LOSSAMBO">
+    <img class="homePreviewImage" src="/images/Preview.png" alt="Apercu Live LOSSAMBO">
+    <div class="heroTop">
+      <div class="heroCard">
+        <h1 class="heroTitle">Live LOSSAMBO</h1>
+        <p class="heroLead">Une plateforme moderne pour reunir musiciens religieux, chorales, chantres et centres. Decouvrez les evenements live et promouvez votre art.</p>
+        <div class="actions">
+          <a class="btn btnPrimary" href="{{ url_for('pages.events') }}">Voir les evenements</a>
+          <a class="btn btnGhost" href="{{ url_for('pages.production') }}">Services de production</a>
+          <a class="btn btnGhost" href="{{ url_for('pages.shop') }}">Boutique</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sectionHeader">
+        <div>
+          <p class="sectionTitle">Evenements a venir</p>
+          <p class="sectionHint">S'inscrire en quelques clics</p>
+        </div>
+      </div>
+      <div class="grid">
+        {% for event in events %}
+          <div class="card">
+            <div class="cardMedia">{% if event.cover_url %}<img src="{{ event.cover_url }}" alt="{{ event.title }}">{% endif %}</div>
+            <div class="cardBody">
+              <p class="cardTitle">{{ event.title }}</p>
+              <p class="cardText">{{ event.description or "" }}</p>
+              <div class="row">
+                <span class="sectionHint">{{ event.start_at.strftime("%d/%m/%Y %H:%M") }}</span>
+                <a class="btn" href="{{ url_for('pages.events') }}#event-{{ event.id }}">Details</a>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="sectionHint">Aucun evenement pour le moment.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sectionHeader">
+        <p class="sectionTitle">Galerie multimedia</p>
+        <p class="sectionHint">Photos et moments live</p>
+      </div>
+      <div class="grid">
+        {% for item in gallery %}
+          <div class="card">
+            <div class="cardMedia">{% if item.media_url %}<img src="{{ item.media_url }}" alt="{{ item.title }}">{% endif %}</div>
+            <div class="cardBody">
+              <p class="cardTitle">{{ item.title }}</p>
+              <p class="cardText">{{ item.description }}</p>
+            </div>
+          </div>
+        {% else %}
+          <div class="sectionHint">Aucune image pour le moment.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

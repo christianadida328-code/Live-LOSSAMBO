@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Live LOSSAMBO{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <div class="nav">
+      <div class="container">
+        <div class="navInner">
+          <a class="brand" href="{{ url_for('pages.home') }}">
+            <img class="brandLogo" src="/images/logo.png" alt="Logo Live LOSSAMBO">
+            <span class="brandName">Live LOSSAMBO</span>
+          </a>
+          <div class="navLinks navLinksOpen">
+            <a href="{{ url_for('pages.home') }}">Accueil</a>
+            <a href="{{ url_for('pages.events') }}">Evenements</a>
+            <a href="{{ url_for('pages.production') }}">Production</a>
+            <a href="{{ url_for('pages.shop') }}">Boutique</a>
+            {% if current_user %}
+              <a href="{{ url_for('pages.members') }}">Membres</a>
+              <a href="{{ url_for('pages.messages') }}">Messages</a>
+              {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('pages.admin') }}">Admin</a>
+              {% endif %}
+              <form method="post" action="{{ url_for('pages.logout') }}" style="display:inline">
+                <button class="btn" type="submit">Deconnexion</button>
+              </form>
+            {% else %}
+              <a href="{{ url_for('pages.auth') }}">Inscription / Connexion</a>
+              <a href="{{ url_for('pages.admin_login') }}">Admin</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main>
+      <div class="container" style="padding-top:12px">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="{{ category }}" style="margin:10px 0">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+      </div>
+      {% block content %}{% endblock %}
+    </main>
+
+    <div class="footer">
+      <div class="container">Live LOSSAMBO - Plateforme pour evenements live.</div>
+    </div>
+  </body>
+</html>

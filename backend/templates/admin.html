@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section">
+  <div class="sectionHeader">
+    <div>
+      <p class="sectionTitle">Admin</p>
+      <p class="sectionHint">Evenements, production, boutique, demandes et membres</p>
+    </div>
+  </div>
+
+  <div class="row" style="align-items:flex-start">
+    <div class="heroCard" style="max-width:620px">
+      <p class="sectionTitle">Creer un evenement</p>
+      <form class="form" method="post" action="{{ url_for('pages.admin_create_event') }}" style="margin-top:12px">
+        <input class="input" name="title" placeholder="Titre" required>
+        <textarea class="input" name="description" placeholder="Description" rows="3"></textarea>
+        <input class="input" name="start_at" type="datetime-local" required>
+        <input class="input" name="venue" placeholder="Lieu">
+        <input class="input" name="cover_url" placeholder="Image URL">
+        <button class="btn btnPrimary" type="submit">Creer</button>
+      </form>
+    </div>
+    <div class="heroCard" style="max-width:620px">
+      <p class="sectionTitle">Creer un service</p>
+      <form class="form" method="post" action="{{ url_for('pages.admin_create_service') }}" style="margin-top:12px">
+        <input class="input" name="name" placeholder="Nom" required>
+        <textarea class="input" name="description" placeholder="Description" rows="3"></textarea>
+        <input class="input" name="price_hint" placeholder="Prix / indication">
+        <input class="input" name="media_url" placeholder="Image URL">
+        <button class="btn btnPrimary" type="submit">Creer</button>
+      </form>
+    </div>
+    <div class="heroCard" style="max-width:620px">
+      <p class="sectionTitle">Creer un produit</p>
+      <form class="form" method="post" action="{{ url_for('pages.admin_create_shop_item') }}" style="margin-top:12px">
+        <input class="input" name="name" placeholder="Nom" required>
+        <textarea class="input" name="description" placeholder="Description" rows="3"></textarea>
+        <input class="input" name="price" placeholder="Prix">
+        <input class="input" name="image_url" placeholder="Image URL">
+        <select class="input" name="kind">
+          <option value="ticket">ticket</option>
+          <option value="merch">merch</option>
+        </select>
+        <button class="btn btnPrimary" type="submit">Creer</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="sectionTitle">Demandes visiteurs</p>
+    {% for req in requests %}
+      <div class="cardItem" style="margin-top:10px">
+        <strong>{{ req.title }}</strong>
+        <div class="sectionHint">{{ req.name }} - {{ req.whatsapp }} - {{ req.status }}</div>
+        {% if req.quantity %}<div class="sectionHint">Quantite: {{ req.quantity }}</div>{% endif %}
+        <p class="cardText">{{ req.message }}</p>
+        <div class="row">
+          {% if req.whatsapp_url %}<a class="btn btnPrimary" href="{{ req.whatsapp_url }}" target="_blank" rel="noreferrer">Repondre WhatsApp</a>{% endif %}
+          <form method="post" action="{{ url_for('pages.admin_mark_done', kind=req.kind, item_id=req.id) }}">
+            <button class="btn" type="submit">Marquer traite</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="sectionHint" style="margin-top:10px">Aucune demande pour le moment.</div>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <p class="sectionTitle">Listes admin</p>
+    <div class="grid" style="margin-top:12px">
+      <div class="cardItem">
+        <strong>Evenements</strong>
+        {% for item in events %}
+          <div class="row" style="justify-content:space-between;margin-top:8px">
+            <span>{{ item.title }}</span>
+            <form method="post" action="{{ url_for('pages.admin_delete', kind='event', item_id=item.id) }}"><button class="btn" type="submit">Supprimer</button></form>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="cardItem">
+        <strong>Production</strong>
+        {% for item in services %}
+          <div class="row" style="justify-content:space-between;margin-top:8px">
+            <span>{{ item.name }}</span>
+            <form method="post" action="{{ url_for('pages.admin_delete', kind='service', item_id=item.id) }}"><button class="btn" type="submit">Supprimer</button></form>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="cardItem">
+        <strong>Boutique</strong>
+        {% for item in shop_items %}
+          <div class="row" style="justify-content:space-between;margin-top:8px">
+            <span>{{ item.name }}</span>
+            <form method="post" action="{{ url_for('pages.admin_delete', kind='shop', item_id=item.id) }}"><button class="btn" type="submit">Supprimer</button></form>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="sectionTitle">Comptes</p>
+    <div class="grid" style="margin-top:12px">
+      {% for member in members %}
+        <div class="cardItem">
+          <strong>{{ member.email }}</strong>
+          <div class="sectionHint">{{ member.role }}{% if member.is_blocked %} - bloque{% endif %}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
