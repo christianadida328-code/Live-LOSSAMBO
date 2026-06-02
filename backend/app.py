@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, send_from_directory, request
@@ -20,7 +20,6 @@ from routes.shop import shop_bp
 from routes.gallery import gallery_bp
 from routes.members import members_bp
 from routes.admin import admin_bp
-from routes.pages import pages_bp
 
 
 # Bootstrap admin (optionnel) : crée le premier compte admin si aucun admin n'existe.
@@ -31,8 +30,8 @@ def create_app():
 
     load_dotenv()
 
-    # Serveur Flask simple: pages HTML + API existante.
-    app = Flask(__name__, static_folder='static', template_folder='templates')
+    # Serveur API + (optionnel) serveur du frontend React build
+    app = Flask(__name__, static_folder=None)
 
 
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change_me')
@@ -56,20 +55,8 @@ def create_app():
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    cors_origins_env = os.getenv('CORS_ORIGINS')
-    if cors_origins_env:
-        cors_origins = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
-    else:
-        # Railway peut servir le frontend et le backend depuis des domaines differents.
-        # Les tokens passent par l'en-tete Authorization, pas par des cookies.
-        cors_origins = '*'
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": cors_origins}},
-        allow_headers=['Content-Type', 'Authorization'],
-        methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        supports_credentials=False,
-    )
+    cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173')
+    CORS(app, origins=cors_origins.split(','), supports_credentials=True)
 
     db.init_app(app)
 
@@ -88,11 +75,9 @@ def create_app():
     with app.app_context():
         # Important : create_all ne crée que les colonnes manquantes si le schéma SQLite ne change pas.
         # Pour de vrais changements de colonnes, il faut migrations.
-        from models import ChatMessage, ContactRequest, Event, EventRequest, GalleryItem, Notification, ProductionRequest, ProductionService, ShopItem, ShopOrder, User, UserBlock  # noqa: F401
-        auto_create_tables = (os.getenv('DISABLE_DB_CREATE_ALL') or '').strip().lower() not in ('1', 'true', 'yes')
-        if auto_create_tables:
-            db.create_all()
+        from models import ChatMessage, ContactRequest, EventRequest, GalleryItem, Notification, ProductionRequest, ShopOrder, User, UserBlock  # noqa: F401
         if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite:'):
+            db.create_all()
             try:
                 cols = [row[1] for row in db.session.execute(db.text("PRAGMA table_info(member_profiles)")).fetchall()]
                 if 'profile_image_url' not in cols:
@@ -109,64 +94,6 @@ def create_app():
             except Exception as e:
                 print('[sqlite_migration] profile_image_url:', e)
 
-        seed_public_content = (os.getenv('SEED_PUBLIC_CONTENT') or 'true').strip().lower() in ('1', 'true', 'yes')
-        if seed_public_content:
-            try:
-                if Event.query.count() == 0:
-                    db.session.add(Event(
-                        title='Lossambo',
-                        description='Rencontre Live LOSSAMBO',
-                        start_at=datetime(2026, 7, 20, 17, 40),
-                        cover_url='/images/Preview.png',
-                        venue='Temple',
-                    ))
-                elif Event.query.filter(Event.start_at >= datetime.utcnow()).count() == 0:
-                    db.session.add(Event(
-                        title='Prochain Live LOSSAMBO',
-                        description='Prochaine rencontre Live LOSSAMBO',
-                        start_at=datetime(2026, 7, 20, 17, 40),
-                        cover_url='/images/Preview.png',
-                        venue='Temple',
-                    ))
-                if ProductionService.query.count() == 0:
-                    db.session.add_all([
-                        ProductionService(
-                            name='Production live',
-                            description='Captation et accompagnement audiovisuel pour cultes, concerts et evenements.',
-                            price_hint='Sur devis',
-                            media_url='/images/Preview.png',
-                        ),
-                        ProductionService(
-                            name='Enregistrement studio',
-                            description='Enregistrement, mixage et mastering pour chantres, chorales et ministeres.',
-                            price_hint='Sur devis',
-                            media_url='/logo.png',
-                        ),
-                    ])
-                if ShopItem.query.count() == 0:
-                    db.session.add_all([
-                        ShopItem(
-                            name='Ticket evenement Live LOSSAMBO',
-                            description='Reservation pour participer au prochain rassemblement.',
-                            price=0,
-                            image_url='/images/Preview.png',
-                            kind='ticket',
-                            available=True,
-                        ),
-                        ShopItem(
-                            name='Support ministere',
-                            description='Article de soutien pour les activites Live LOSSAMBO.',
-                            price=10,
-                            image_url='/logo.png',
-                            kind='merch',
-                            available=True,
-                        ),
-                    ])
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                print('[seed_public_content] Erreur:', e)
-
 
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -176,7 +103,6 @@ def create_app():
     app.register_blueprint(shop_bp, url_prefix='/api/shop')
     app.register_blueprint(gallery_bp, url_prefix='/api/gallery')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(pages_bp)
 
     # Bootstrap admin (optionnel)
     from models import User, MemberProfile  # import local pour éviter cycles
@@ -204,7 +130,6 @@ def create_app():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dist_dir = os.path.join(project_root, 'frontend', 'dist')
     index_path = os.path.join(dist_dir, 'index.html')
-    public_images_dir = os.path.join(project_root, 'images')
 
     # Configuration du dossier d'uploads pour les images (TODO.md)
     upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
@@ -216,20 +141,8 @@ def create_app():
     def health():
         return jsonify({"status": "ok"})
 
-    @app.get('/uploads/<path:filename>')
-    def serve_uploads(filename):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-    @app.get('/images/<path:filename>')
-    def serve_public_images(filename):
-        return send_from_directory(public_images_dir, filename)
-
-    @app.get('/logo.png')
-    def serve_logo():
-        return send_from_directory(public_images_dir, 'logo.png')
-
     # Serve static files / SPA fallback
-    if (os.getenv('SERVE_REACT_BUILD') or '').strip().lower() in ('1', 'true', 'yes') and os.path.exists(dist_dir) and os.path.exists(index_path):
+    if os.path.exists(dist_dir) and os.path.exists(index_path):
         @app.get('/')
         def serve_index():
             return send_from_directory(dist_dir, 'index.html')
@@ -278,19 +191,7 @@ def create_app():
             except Exception:
                 ok_val = 1
 
-            from models import Event, ProductionService, ShopItem, User
-            return jsonify({
-                "ok": True,
-                "dialect": dialect,
-                "test": ok_val,
-                "counts": {
-                    "events": Event.query.count(),
-                    "production_services": ProductionService.query.count(),
-                    "shop_items": ShopItem.query.count(),
-                    "users": User.query.count(),
-                },
-                "api_base_note": "frontend should call /api on this same host unless VITE_API_BASE points to another backend",
-            })
+            return jsonify({"ok": True, "dialect": dialect, "test": ok_val})
 
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -302,6 +203,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', '5000'))
-    debug = (os.getenv('FLASK_DEBUG') or '').strip().lower() in ('1', 'true', 'yes')
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(host='0.0.0.0', port=5000, debug=True)
