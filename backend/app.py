@@ -20,6 +20,7 @@ from routes.shop import shop_bp
 from routes.gallery import gallery_bp
 from routes.members import members_bp
 from routes.admin import admin_bp
+from routes.pages import pages_bp
 
 
 # Bootstrap admin (optionnel) : crée le premier compte admin si aucun admin n'existe.
@@ -30,8 +31,8 @@ def create_app():
 
     load_dotenv()
 
-    # Serveur API + (optionnel) serveur du frontend React build
-    app = Flask(__name__, static_folder=None)
+    # Serveur Flask simple: pages HTML + API existante.
+    app = Flask(__name__, static_folder='static', template_folder='templates')
 
 
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change_me')
@@ -103,6 +104,7 @@ def create_app():
     app.register_blueprint(shop_bp, url_prefix='/api/shop')
     app.register_blueprint(gallery_bp, url_prefix='/api/gallery')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(pages_bp)
 
     # Bootstrap admin (optionnel)
     from models import User, MemberProfile  # import local pour éviter cycles
@@ -130,6 +132,7 @@ def create_app():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dist_dir = os.path.join(project_root, 'frontend', 'dist')
     index_path = os.path.join(dist_dir, 'index.html')
+    public_images_dir = os.path.join(project_root, 'images')
 
     # Configuration du dossier d'uploads pour les images (TODO.md)
     upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
@@ -141,8 +144,20 @@ def create_app():
     def health():
         return jsonify({"status": "ok"})
 
+    @app.get('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+    @app.get('/images/<path:filename>')
+    def serve_public_images(filename):
+        return send_from_directory(public_images_dir, filename)
+
+    @app.get('/logo.png')
+    def serve_logo():
+        return send_from_directory(public_images_dir, 'logo.png')
+
     # Serve static files / SPA fallback
-    if os.path.exists(dist_dir) and os.path.exists(index_path):
+    if (os.getenv('SERVE_REACT_BUILD') or '').strip().lower() in ('1', 'true', 'yes') and os.path.exists(dist_dir) and os.path.exists(index_path):
         @app.get('/')
         def serve_index():
             return send_from_directory(dist_dir, 'index.html')
@@ -203,4 +218,6 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.getenv('PORT', '5000'))
+    debug = (os.getenv('FLASK_DEBUG') or '').strip().lower() in ('1', 'true', 'yes')
+    app.run(host='0.0.0.0', port=port, debug=debug)
