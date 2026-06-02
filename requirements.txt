@@ -1,2 +1,2 @@
 -r backend/requirements.txt
-gunicorn==23.0.0
+gunicorn==21.2.0
