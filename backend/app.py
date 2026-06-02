@@ -23,8 +23,10 @@ from routes.admin import admin_bp
 from routes.pages import pages_bp
 
 
-# Bootstrap admin (optionnel) : crée le premier compte admin si aucun admin n'existe.
-# Variables d'env attendues : ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_DISPLAY_NAME (facultatif)
+# Bootstrap admin: cree ou met a jour le compte admin principal.
+# Variables d'env possibles : ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_PASSWORD_HASH, ADMIN_DISPLAY_NAME.
+DEFAULT_ADMIN_EMAIL = 'kedornyota328@gmail.com'
+DEFAULT_ADMIN_PASSWORD_HASH = 'scrypt:32768:8:1$gwBAjMwPTB6hWYbT$6f93fb09d8650be70cc24c2ff9bc436b6a0f36e01bde576f24116f8654089f34ea11eff57a5e41eee1c2818375d900d6072cbd98aeea40626093a39254f34433'
 
 
 def create_app():
@@ -109,20 +111,23 @@ def create_app():
     # Bootstrap admin (optionnel)
     from models import User, MemberProfile  # import local pour éviter cycles
     with app.app_context():
-        admin_email = (os.getenv('ADMIN_EMAIL') or '').strip().lower()
+        admin_email = (os.getenv('ADMIN_EMAIL') or DEFAULT_ADMIN_EMAIL).strip().lower()
         admin_password = (os.getenv('ADMIN_PASSWORD') or '').strip()
+        admin_password_hash = (os.getenv('ADMIN_PASSWORD_HASH') or DEFAULT_ADMIN_PASSWORD_HASH).strip()
         admin_display_name = (os.getenv('ADMIN_DISPLAY_NAME') or '').strip()
-        if admin_email and admin_password:
+        if admin_email and (admin_password or admin_password_hash):
             try:
-                existing_admin = User.query.filter_by(role='admin').first()
-                if not existing_admin:
+                user = User.query.filter_by(email=admin_email).first()
+                if not user:
                     user = User(email=admin_email, role='admin')
-                    user.password_hash = generate_password_hash(admin_password)
+                    db.session.add(user)
+                user.role = 'admin'
+                user.password_hash = generate_password_hash(admin_password) if admin_password else admin_password_hash
+                if not user.profile:
                     display_name = admin_display_name or admin_email.split('@')[0]
                     user.profile = MemberProfile(display_name=display_name)
-                    db.session.add(user)
-                    db.session.commit()
-                    print(f"[bootstrap_admin] Admin créé: {admin_email}")
+                db.session.commit()
+                print(f"[bootstrap_admin] Admin pret: {admin_email}")
             except Exception as e:
                 print('[bootstrap_admin] Erreur:', e)
 
