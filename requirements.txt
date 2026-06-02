@@ -1,2 +1,7 @@
--r backend/requirements.txt
 gunicorn==21.2.0
+Flask
+flask-cors
+flask-jwt-extended
+flask-sqlalchemy
+python-dotenv
+psycopg2-binary
