@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/backend"
 
 export PYTHONUNBUFFERED=1
 export PORT="${PORT:-5000}"
